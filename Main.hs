@@ -69,7 +69,7 @@ getColRow i = (i `mod` 9, i `quot` 9)
 
 getSolutionSpace :: Board -> [(Int, [Value])]
 getSolutionSpace board =
-        let freeCells = map fst $ filter (\(_, x) -> x == 0) $ zip [0..] board
+        let freeCells = map fst $ filter ((==0) . snd) $ zip [0..] board
          in map solutions freeCells
       where solutions i =
               let (col, row) = getColRow i
