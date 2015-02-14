@@ -34,84 +34,76 @@ hard = [ 0,0,0, 0,0,3, 0,2,0
        , 0,8,0, 1,0,0, 0,0,0
        ]
 
-getColValues :: Board -> Col -> [Value]
-getColValues [] _ = []
-getColValues board col =
-        board !! col : getColValues (drop 9 board) col
+colValues :: Col -> Board -> [Value]
+colValues _ [] = []
+colValues col board =
+        board !! col : colValues col (drop 9 board)
 
-getRowValues :: Board -> Row -> [Value]
-getRowValues board row =
+rowValues :: Row -> Board -> [Value]
+rowValues row board =
         take 9 $ drop (row * 9) board
 
-getBlockValues :: Board -> Block -> [Value]
-getBlockValues board block =
+blockValues :: Block -> Board -> [Value]
+blockValues block board =
         let cells = [0, 1, 2, 9, 10, 11, 18, 19, 20]
             offset = block `quot` 3 * 27 + (block `mod` 3 * 3)
             offsetCells = map (+offset) cells
          in map (board !!) offsetCells
 
-getBlockNum :: Col -> Row -> Block
-getBlockNum col row =
+blockNum :: Col -> Row -> Block
+blockNum col row =
         let x = col `quot` 3
             y = row `quot` 3
          in y * 3 + x
 
-getFreeByCol :: Board -> Col -> [Value]
-getFreeByCol board col =
-        let colValues = getColValues board col
-         in filter (`notElem` colValues) [1..9]
+freeByCol :: Col -> Board -> [Value]
+freeByCol col board =
+        let vs = colValues col board
+         in filter (`notElem` vs) [1..9]
 
+freeByRow :: Row -> Board -> [Value]
+freeByRow row board =
+        let vs = rowValues row board
+         in filter (`notElem` vs) [1..9]
 
-getFreeByRow :: Board -> Row -> [Value]
-getFreeByRow board row =
-        let rowValues = getRowValues board row
-         in filter (`notElem` rowValues) [1..9]
+freeByBlock :: Block -> Board -> [Value]
+freeByBlock block board =
+        let vs = blockValues block board
+         in filter (`notElem` vs) [1..9]
 
-getFreeByBlock :: Board -> Block -> [Value]
-getFreeByBlock board block =
-        let blockValues = getBlockValues board block
-         in filter (`notElem` blockValues) [1..9]
-
-getFree :: Board -> Col -> Row -> [Value]
-getFree board col row =
-        let colFree = getFreeByCol board col
-            rowFree = getFreeByRow board row
-            block = getBlockNum col row
-            blockFree = getFreeByBlock board block
+freeByIndex :: Index -> Board -> [Value]
+freeByIndex i board =
+        let col = i `mod` 9
+            row = i `quot` 9
+            block = blockNum col row
+            colFree = freeByCol col board
+            rowFree = freeByRow row board
+            blockFree = freeByBlock block board
          in intersect colFree $ intersect rowFree blockFree
-
-getColRow :: Index -> (Col, Row)
-getColRow i = (i `mod` 9, i `quot` 9)
-
-getSolutionSpace :: Board -> [(Index, [Value])]
-getSolutionSpace board =
-        let freeCells = map fst $ filter ((==0) . snd) $ zip [0..] board
-         in map solutions freeCells
-      where solutions i =
-              let (col, row) = getColRow i
-               in (i, getFree board col row)
-
-applyMove :: Board -> Index -> Value -> Board
-applyMove board i value =
-        take i board ++ [value] ++ drop (i + 1) board
 
 moveList :: Board -> [(Index, [Value])]
 moveList board =
-        let moves = getSolutionSpace board
+        let freeIndexes = map fst $ filter ((==0) . snd) $ zip [0..] board
+            movesAt i = (i, freeByIndex i board)
+            moves = map movesAt freeIndexes
          in sortWith (length . snd) moves
 
-solve' :: [(Index, [Value])] -> Board -> [Board]
-solve' [] board = [board]
-solve' ((_, []):_) _ = []
-solve' ((i, [v]):_) board =
-        let board' = applyMove board i v
-            ss = moveList board'
-         in solve' ss board'
-solve' ((i, v:vs):_) board =
-        solve' [(i, [v])] board ++ solve' [(i, vs)] board
+applyMove :: Index -> Value -> Board -> Board
+applyMove i value board =
+        take i board ++ [value] ++ drop (i + 1) board
+
+solveWith :: [(Index, [Value])] -> Board -> [Board]
+solveWith [] board = [board]
+solveWith ((_, []):_) _ = []
+solveWith ((i, [v]):_) board =
+        let board' = applyMove i v board
+            moves = moveList board'
+         in solveWith moves board'
+solveWith ((i, v:vs):_) board =
+        solveWith [(i, [v])] board ++ solveWith [(i, vs)] board
 
 solve :: Board -> [Board]
-solve board = solve' (moveList board) board
+solve board = solveWith (moveList board) board
 
 boardStr :: Board -> String
 boardStr [] = []
