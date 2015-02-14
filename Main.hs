@@ -2,6 +2,10 @@ import Data.List (intersect)
 
 type Value = Int
 type Board = [Value]
+type Col = Int
+type Row = Int
+type Index = Int
+type Block = Int
 
 initial :: Board
 initial = [
@@ -18,45 +22,45 @@ initial = [
           0,0,0, 0,8,0, 0,7,9
           ]
 
-getColValues :: Board -> Int -> [Value]
+getColValues :: Board -> Col -> [Value]
 getColValues [] _ = []
 getColValues board col =
         board !! col : getColValues (drop 9 board) col
 
-getRowValues :: Board -> Int -> [Value]
+getRowValues :: Board -> Row -> [Value]
 getRowValues board row =
         take 9 $ drop (row * 9) board
 
-getBlockValues :: Board -> Int -> [Value]
+getBlockValues :: Board -> Block -> [Value]
 getBlockValues board block =
         let cells = [0, 1, 2, 9, 10, 11, 18, 19, 20]
             offset = block `quot` 3 * 27 + (block `mod` 3 * 3)
             offsetCells = map (+offset) cells
          in map (board !!) offsetCells
 
-getBlockNum :: Int -> Int -> Int
+getBlockNum :: Col -> Row -> Block
 getBlockNum col row =
         let x = col `quot` 3
             y = row `quot` 3
          in y * 3 + x
 
-getFreeByCol :: Board -> Int -> [Value]
+getFreeByCol :: Board -> Col -> [Value]
 getFreeByCol board col =
         let colValues = getColValues board col
          in filter (`notElem` colValues) [1..9]
 
 
-getFreeByRow :: Board -> Int -> [Value]
+getFreeByRow :: Board -> Row -> [Value]
 getFreeByRow board row =
         let rowValues = getRowValues board row
          in filter (`notElem` rowValues) [1..9]
 
-getFreeByBlock :: Board -> Int -> [Value]
+getFreeByBlock :: Board -> Block -> [Value]
 getFreeByBlock board block =
         let blockValues = getBlockValues board block
          in filter (`notElem` blockValues) [1..9]
 
-getFree :: Board -> Int -> Int -> [Value]
+getFree :: Board -> Col -> Row -> [Value]
 getFree board col row =
         let colFree = getFreeByCol board col
             rowFree = getFreeByRow board row
@@ -64,10 +68,10 @@ getFree board col row =
             blockFree = getFreeByBlock board block
          in intersect colFree $ intersect rowFree blockFree
 
-getColRow :: Int -> (Int, Int)
+getColRow :: Index -> (Col, Row)
 getColRow i = (i `mod` 9, i `quot` 9)
 
-getSolutionSpace :: Board -> [(Int, [Value])]
+getSolutionSpace :: Board -> [(Index, [Value])]
 getSolutionSpace board =
         let freeCells = map fst $ filter ((==0) . snd) $ zip [0..] board
          in map solutions freeCells
@@ -75,11 +79,11 @@ getSolutionSpace board =
               let (col, row) = getColRow i
                in (i, getFree board col row)
 
-applyMove :: Board -> Int -> Value -> Board
+applyMove :: Board -> Index -> Value -> Board
 applyMove board i value =
         take i board ++ [value] ++ drop (i + 1) board
 
-applySolutions :: [(Int, [Value])] -> Board -> Board
+applySolutions :: [(Index, [Value])] -> Board -> Board
 applySolutions [] board = board
 applySolutions ((i,[v]):ss) board = applySolutions ss $ applyMove board i v
 applySolutions _ _ = undefined
@@ -105,7 +109,7 @@ boardStr board =
               valueStr 0 = " "
               valueStr v = show v
 
-decorationAt :: Int -> String
+decorationAt :: Index -> String
 decorationAt n
     | n == 0 = "+---+---+---+\n|"
     | n `mod` 27 == 0 = "|\n+---+---+---+\n|"
