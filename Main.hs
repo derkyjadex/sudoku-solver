@@ -1,4 +1,5 @@
 import Data.List (intersect)
+import GHC.Exts (sortWith)
 
 type Value = Int
 type Board = [Value]
@@ -32,7 +33,6 @@ hard = [ 0,0,0, 0,0,3, 0,2,0
        , 0,0,0, 9,5,0, 0,0,3
        , 0,8,0, 1,0,0, 0,0,0
        ]
-
 
 getColValues :: Board -> Col -> [Value]
 getColValues [] _ = []
@@ -95,21 +95,23 @@ applyMove :: Board -> Index -> Value -> Board
 applyMove board i value =
         take i board ++ [value] ++ drop (i + 1) board
 
-applySolutions :: [(Index, [Value])] -> Board -> Board
-applySolutions [] board = board
-applySolutions ((i,[v]):ss) board = applySolutions ss $ applyMove board i v
-applySolutions _ _ = undefined
+moveList :: Board -> [(Index, [Value])]
+moveList board =
+        let moves = getSolutionSpace board
+         in sortWith (length . snd) moves
 
-applySimpleSolutions :: Board -> Board
-applySimpleSolutions board =
-        let solutions = getSolutionSpace board
-            simple = filter isSimple solutions
-         in applySolutions simple board
-      where isSimple (_, [_]) = True
-            isSimple _ = False
+solve' :: [(Index, [Value])] -> Board -> [Board]
+solve' [] board = [board]
+solve' ((_, []):_) _ = []
+solve' ((i, [v]):_) board =
+        let board' = applyMove board i v
+            ss = moveList board'
+         in solve' ss board'
+solve' ((i, v:vs):_) board =
+        solve' [(i, [v])] board ++ solve' [(i, vs)] board
 
-isSolved :: Board -> Bool
-isSolved = notElem 0
+solve :: Board -> [Board]
+solve board = solve' (moveList board) board
 
 boardStr :: Board -> String
 boardStr [] = []
@@ -133,15 +135,15 @@ printBoard :: Board -> IO ()
 printBoard board =
         putStrLn $ boardStr board
 
-solve :: Board -> IO Board
-solve board = do
+doSolve :: Board -> IO ()
+doSolve board = do
+        putStrLn "Initial:"
         printBoard board
-        if isSolved board
-            then return board
-            else solve $ applySimpleSolutions board
+        putStrLn "Solutions:"
+        mapM_ printBoard $ solve board
+        putStrLn ""
 
 main :: IO ()
 main = do
-        _ <- solve easy
-        _ <- solve hard
-        return ()
+        doSolve easy
+        doSolve hard
