@@ -18,10 +18,6 @@ initial = [
           0,0,0, 0,8,0, 0,7,9
           ]
 
-getValueStr :: Value -> String
-getValueStr 0 = "."
-getValueStr v = show v
-
 getColValues :: Board -> Int -> [Value]
 getColValues [] _ = []
 getColValues board col =
@@ -99,28 +95,28 @@ applySimpleSolutions board =
 isSolved :: Board -> Bool
 isSolved = notElem 0
 
-printBoard :: Board -> IO ()
-printBoard [] = return ()
-printBoard (a:b:c:d:e:f:g:h:i:rest) = do
-        putStr $ getValueStr a
-        putStr $ getValueStr b
-        putStr $ getValueStr c
-        putStr " "
-        putStr $ getValueStr d
-        putStr $ getValueStr e
-        putStr $ getValueStr f
-        putStr " "
-        putStr $ getValueStr g
-        putStr $ getValueStr h
-        putStr $ getValueStr i
-        putStrLn ""
-        printBoard rest
-printBoard _ = undefined
+boardStr :: Board -> String
+boardStr [] = []
+boardStr board =
+        boardStr' 0 board
+        where boardStr' _ [] = "|\n+---+---+---+"
+              boardStr' n (v:vs) =
+                decorationAt n ++ (valueStr v) ++ boardStr' (n + 1) vs
+              valueStr 0 = " "
+              valueStr v = show v
+
+decorationAt :: Int -> String
+decorationAt n
+    | n == 0 = "+---+---+---+\n|"
+    | n `mod` 27 == 0 = "|\n+---+---+---+\n|"
+    | n `mod` 9 == 0 = "|\n|"
+    | n `mod` 3 == 0 = "|"
+    | otherwise = ""
 
 solve :: Board -> IO Board
 solve board = do
-        printBoard board
-        putStrLn "-----------"
+        putStrLn $ boardStr board
+        putStrLn ""
         if isSolved board
             then return board
             else solve $ applySimpleSolutions board
