@@ -104,8 +104,8 @@ boardStr [] = []
 boardStr board =
         boardStr' 0 board
         where boardStr' _ [] = "|\n+---+---+---+"
-              boardStr' n (v:vs) =
-                decorationAt n ++ (valueStr v) ++ boardStr' (n + 1) vs
+              boardStr' i (v:vs) =
+                decorationAt i ++ valueStr v ++ boardStr' (i + 1) vs
               valueStr 0 = " "
               valueStr v = show v
 
@@ -117,10 +117,13 @@ decorationAt n
     | n `mod` 3 == 0 = "|"
     | otherwise = ""
 
+printBoard :: Board -> IO ()
+printBoard board =
+        putStrLn $ boardStr board
+
 solve :: Board -> IO Board
 solve board = do
-        putStrLn $ boardStr board
-        putStrLn ""
+        printBoard board
         if isSolved board
             then return board
             else solve $ applySimpleSolutions board
