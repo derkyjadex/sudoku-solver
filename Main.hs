@@ -8,31 +8,10 @@ type Row = Int
 type Index = Int
 type Block = Int
 
-easy, hard :: Board
-easy = [ 5,3,0, 0,7,0, 0,0,0
-       , 6,0,0, 1,9,5, 0,0,0
-       , 0,9,8, 0,0,0, 0,6,0
-
-       , 8,0,0, 0,6,0, 0,0,3
-       , 4,0,0, 8,0,3, 0,0,1
-       , 7,0,0, 0,2,0, 0,0,6
-
-       , 0,6,0, 0,0,0, 2,8,0
-       , 0,0,0, 4,1,9, 0,0,5
-       , 0,0,0, 0,8,0, 0,7,9
-       ]
-hard = [ 0,0,0, 0,0,3, 0,2,0
-       , 2,0,0, 0,1,9, 0,0,0
-       , 0,0,1, 0,0,8, 0,9,7
-
-       , 6,0,0, 0,0,0, 0,7,0
-       , 7,0,9, 6,0,1, 8,0,4
-       , 0,3,0, 0,0,0, 0,0,6
-
-       , 3,6,0, 8,0,0, 7,0,0
-       , 0,0,0, 9,5,0, 0,0,3
-       , 0,8,0, 1,0,0, 0,0,0
-       ]
+easy, hard, evil :: String
+easy = "530070000600195000098000060800060003400803001700020006060000280000419005000080079"
+hard = "000003020200019000001008097600000070709601804030000006360800700000950003080100000"
+evil = "502000008000800030000407060700010600040206090006040001050701000080002000900000806"
 
 colValues :: Col -> Board -> [Value]
 colValues _ [] = []
@@ -127,8 +106,12 @@ printBoard :: Board -> IO ()
 printBoard board =
         putStrLn $ boardStr board
 
-doSolve :: Board -> IO ()
-doSolve board = do
+readBoard :: String -> Board
+readBoard = map (\c -> read [c])
+
+doSolve :: String -> IO ()
+doSolve s = do
+        let board = readBoard s
         putStrLn "Initial:"
         printBoard board
         putStrLn "Solutions:"
@@ -139,3 +122,4 @@ main :: IO ()
 main = do
         doSolve easy
         doSolve hard
+        doSolve evil
